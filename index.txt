@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Canva Video Editor - Prototipo Avanzado</title>
+<style>
+:root {
+--bg-color: #111116;
+--panel-color: #1e1e24;
+--accent-color: #8b5cf6;
+--text-color: #ffffff;
+}
+
+body {
+margin: 0;
+padding: 0;
+font-family: system-ui, -apple-system, sans-serif;
+background-color: var(--bg-color);
+color: var(--text-color);
+display: flex;
+flex-direction: column;
+height: 100vh;
+overflow: hidden;
+user-select: none;
+}
+
+#editor-container {
+display: flex;
+flex-direction: column;
+height: 100%;
+}
+
+#top-panels {
+display: flex;
+flex: 1;
+height: 60%;
+}
+
+#assets-panel {
+width: 280px;
+background-color: var(--panel-color);
+padding: 15px;
+border-right: 2px solid #111;
+display: flex;
+flex-direction: column;
+gap: 10px;
+overflow-y: auto;
+}
+
+.btn-touch {
+background-color: var(--accent-color);
+color: white;
+border: none;
+padding: 12px;
+border-radius: 8px;
+font-size: 15px;
+font-weight: bold;
+min-height: 48px;
+cursor: pointer;
+width: 100%;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+
+.file-input-label {
+background-color: #3b82f6;
+text-align: center;
+}
+
+#preview-panel {
+flex: 1;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+background-color: #09090b;
+padding: 20px;
+}
+
+#video-preview {
+background-color: #000;
+max-width: 100%;
+max-height: 75%;
+aspect-ratio: 16 / 9;
+border-radius: 8px;
+box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+}
+
+#controls {
+margin-top: 15px;
+display: flex;
+gap: 15px;
+align-items: center;
+}
+
+#time-display {
+font-family: monospace;
+font-size: 18px;
+background: #2a2a32;
+padding: 5px 10px;
+border-radius: 4px;
+}
+
+/* Timeline */
+#timeline-panel {
+height: 40%;
+background-color: var(--panel-color);
+border-top: 3px solid #111;
+padding: 15px;
+box-sizing: border-box;
+overflow-y: auto;
+}
+
+.timeline-track {
+height: 55px;
+background-color: #15151a;
+margin-bottom: 10px;
+border-radius: 8px;
+position: relative;
+display: flex;
+align-items: center;
+border: 1px solid #333;
+}
+
+.track-label {
+font-size: 11px;
+font-weight: bold;
+text-transform: uppercase;
+background: #2a2a32;
+padding: 4px 8px;
+border-radius: 4px;
+margin-left: 10px;
+z-index: 5;
+pointer-events: none;
+}
+
+.clip {
+height: 80%;
+position: absolute;
+border-radius: 6px;
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 12px;
+font-weight: bold;
+padding: 0 10px;
+box-sizing: border-box;
+box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+color: white;
+overflow: hidden;
+white-space: nowrap;
+text-overflow: ellipsis;
+}
+
+/* Colores por tipo de recurso */
+.clip-video { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
+.clip-image { background: linear-gradient(135deg, #10b981, #047857); }
+.clip-audio { background: linear-gradient(135deg, #f59e0b, #b45309); }
+.clip-text { background: linear-gradient(135deg, #ec4899, #be185d); }
+</style>
+</head>
+<body>
+
+<div id="editor-container">
+<div id="top-panels">
+<div id="assets-panel">
+<h3>Subir Recursos</h3>
+
+<label class="btn-touch file-input-label">
+📁 Subir Video/Foto
+<input type="file" id="file-media" accept="video/,image/" style="display:none;" onchange="handleFileLoad(event, 'media')">
+</label>
+
+<label class="btn-touch file-input-label" style="background-color: #f59e0b;">
+🎵 Subir Audio
+<input type="file" id="file-audio" accept="audio/*" style="display:none;" onchange="handleFileLoad(event, 'audio')">
+</label>
+
+<button class="btn-touch" onclick="addTextPrompt()">+ Añadir Texto</button>
+
+<div style="margin-top:auto;">
+<label style="font-size:12px; display:block; margin-bottom:5px;">Transición activa:</label>
+<select id="transition-type" class="btn-touch" style="background:#333; text-align:left;">
+<option value="none">Ninguna</option>
+<option value="fade">Difuminar (Fade)</option>
+<option value="slide">Desplazamiento (Slide)</option>
+</select>
+</div>
+</div>
+
+<div id="preview-panel">
+<canvas id="video-preview" width="1280" height="720"></canvas>
+<div id="controls">
+<button class="btn-touch" style="width:100px;" onclick="togglePlay()">Play/Pausa</button>
+<button class="btn-touch" style="width:90px; background:#ef4444;" onclick="stopVideo()">Reiniciar</button>
+<div id="time-display">00:00.00</div>
+</div>
+</div>
+</div>
+
+<div id="timeline-panel">
+<h3>Línea de Tiempo (Capas)</h3>
+
+<div class="timeline-track" id="track-text"><span class="track-label">Texto</span></div>
+<div class="timeline-track" id="track-audio"><span class="track-label">Audio</span></div>
+<div class="timeline-track" id="track-overlay"><span class="track-label">Fotos</span></div>
+<div class="timeline-track" id="track-video"><span class="track-label">Video Base</span></div>
+</div>
+</div>
+
+<script>
+const canvas = document.getElementById('video-preview');
+const ctx = canvas.getContext('2d');
+const timeDisplay = document.getElementById('time-display');
+const transitionSelect = document.getElementById('transition-type');
+
+// Estado del Editor
+let isPlaying = false;
+let currentTime = 0; // Tiempo actual en segundos
+let lastFrameTime = performance.now();
+
+// Almacén de capas/clips de la línea de tiempo
+let layers = {
+video: null,
+image: null,
+audio: null,
+text: null
+};
+
+// 1. Manejo y Carga de Archivos Reales del Usuario
+function handleFileLoad(event, type) {
+const file = event.target.files[0];
+if (!file) return;
+
+const fileURL = URL.createObjectURL(file);
+
+if (file.type.startsWith('video/')) {
+const videoEl = document.createElement('video');
+videoEl.src = fileURL;
+videoEl.muted = false; // Permitir audio del video original
+videoEl.load();
+
+layers.video = { type: 'video', element: videoEl, start: 0, end: 7, name: file.name };
+rebuildTimelineUI('track-video', layers.video, 'clip-video');
+}
+else if (file.type.startsWith('image/')) {
+const imgEl = new Image();
+imgEl.src = fileURL;
+
+layers.image = { type: 'image', element: imgEl, start: 3, end: 8, name: file.name };
+rebuildTimelineUI('track-overlay', layers.image, 'clip-image');
+}
+else if (file.type.startsWith('audio/')) {
+const audioEl = new Audio();
+audioEl.src = fileURL;
+
+layers.audio = { type: 'audio', element: audioEl, start: 0, end: 10, name: file.name };
+rebuildTimelineUI('track-audio', layers.audio, 'clip-audio');
+}
+}
+
+function addTextPrompt() {
+const textInput = prompt("Introduce el texto para el video:");
+if (!textInput) return;
+
+layers.text = { type: 'text', content: textInput, start: 1, end: 6, name: textInput };
+rebuildTimelineUI('track-text', layers.text, 'clip-text');
+}
+
+// Dibuja visualmente los bloques en la línea de tiempo
+function rebuildTimelineUI(trackId, data, cssClass) {
+const track = document.getElementById(trackId);
+// Limpiar clips viejos conservando el label
+const label = track.querySelector('.track-label');
+track.innerHTML = '';
+track.appendChild(label);
+
+if (!data) return;
+
+const clipEl = document.createElement('div');
+clipEl.className = clip ${cssClass}; // Mapeo simple: 1 segundo = 40 píxeles de ancho clipEl.style.left = ``${100 + (data.start * 40)}px;
+clipEl.style.width = ${(data.end - data.start) * 40}px`;
+clipEl.innerText = data.name;
+
+track.appendChild(clipEl);
+}
+
+// 2. Motor de Renderizado en Canvas y Lógica de Transiciones
+function updateAndRender() {
+if (!isPlaying) return;
+
+// Calcular el tiempo transcurrido real
+const now = performance.now();
+const deltaTime = (now - lastFrameTime) / 1000;
+lastFrameTime = now;
+currentTime += deltaTime;
+
+// Mostrar tiempo con formato MM:SS.CC
+const minutes = Math.floor(currentTime / 60).toString().padStart(2, '0');
+const seconds = Math.floor(currentTime % 60).toString().padStart(2, '0');
+const cents = Math.floor((currentTime % 1) * 100).toString().padStart(2, '0');
+timeDisplay.innerText = ``${minutes}:{cents}`;
+
+// Limpiar lienzo
+ctx.fillStyle = "#000000";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+// --- CAPA 1: VIDEO BASE ---
+if (layers.video && currentTime >= layers.video.start && currentTime <= layers.video.end) {
+if (layers.video.element.paused) layers.video.element.play();
+
+// Aplicar efectos de transición seleccionados
+applyTransitions(layers.video);
+
+ctx.drawImage(layers.video.element, 0, 0, canvas.width, canvas.height);
+ctx.globalAlpha = 1.0; // Resetear opacidad tras pintar
+} else if (layers.video && !layers.video.element.paused) {
+layers.video.element.pause();
+}
+
+// --- CAPA 2: IMAGEN SUPERPUESTA ---
+if (layers.image && currentTime >= layers.image.start && currentTime <= layers.image.end) {
+applyTransitions(layers.image);
+// Centrar la imagen sobre el video
+ctx.drawImage(layers.image.element, 340, 160, 600, 400);
+ctx.globalAlpha = 1.0;
+}
+
+// --- CAPA 3: AUDIO EN MEMORIA ---
+if (layers.audio) {
+if (currentTime >= layers.audio.start && currentTime <= layers.audio.end) {
+if (layers.audio.element.paused) layers.audio.element.play();
+} else {
+layers.audio.element.pause();
+}
+}
+
+// --- CAPA 4: TEXTO ---
+if (layers.text && currentTime >= layers.text.start && currentTime <= layers.text.end) {
+ctx.fillStyle = "#ffffff";
+ctx.font = "bold 60px sans-serif";
+ctx.shadowColor = "rgba(0,0,0,0.5)";
+ctx.shadowBlur = 10;
+ctx.textAlign = "center";
+ctx.fillText(layers.text.content, canvas.width / 2, 600);
+ctx.shadowBlur = 0; // Resetear sombra
+}
+
+requestAnimationFrame(updateAndRender);
+}
+
+// Aplica transformaciones matemáticas basadas en la entrada/salida de un elemento
+function applyTransitions(layer) {
+const transType = transitionSelect.value;
+if (transType === 'none') return;
+
+const durationIn = 0.8; // Duración del efecto de entrada en segundos
+const timeActive = currentTime - layer.start;
+
+if (timeActive < durationIn) {
+const progress = timeActive / durationIn; // Va de 0 a 1
+
+if (transType === 'fade') {
+ctx.globalAlpha = progress; // Efecto Difuminar
+}
+else if (transType === 'slide') {
+// Efecto Desplazamiento desde la izquierda
+const offsetX = (1 - progress) * -canvas.width;
+ctx.translate(offsetX, 0);
+// Nota: si usas translate, debes limpiar el contexto al final de la capa,
+// para este prototipo simplificado altera directamente el flujo de dibujo.
+}
+}
+}
+
+// 3. Controles de Reproducción táctiles
+function togglePlay() {
+isPlaying = !isPlaying;
+if (isPlaying) {
+lastFrameTime = performance.now();
+updateAndRender();
+} else {
+if (layers.video) layers.video.element.pause();
+if (layers.audio) layers.audio.element.pause();
+}
+}
+
+function stopVideo() {
+isPlaying = false;
+currentTime = 0;
+timeDisplay.innerText = "00:00.00";
+
+if (layers.video) { layers.video.element.pause(); layers.video.element.currentTime = 0; }
+if (layers.audio) { layers.audio.element.pause(); layers.audio.element.currentTime = 0; }
+
+// Renderizar un fotograma limpio
+ctx.fillStyle = "#000";
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
+</script>
+</body>
+</html>
