@@ -3,402 +3,638 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Canva Video Editor - Prototipo Avanzado</title>
+<title>Code Cub's Cosmic Video Editor</title>
 <style>
+/* --- Global Theme & Variables --- */
 :root {
---bg-color: #111116;
---panel-color: #1e1e24;
---accent-color: #8b5cf6;
---text-color: #ffffff;
+    --primary: #6c5ce7;
+    --accent: #a29bfe;
+    --bg-dark: #0f0c29;
+    --text-light: #ffffff;
+    --card-bg: rgba(255, 255, 255, 0.08);
 }
 
-body {
-margin: 0;
-padding: 0;
-font-family: system-ui, -apple-system, sans-serif;
-background-color: var(--bg-color);
-color: var(--text-color);
-display: flex;
-flex-direction: column;
-height: 100vh;
-overflow: hidden;
-user-select: none;
+body, html {
+    margin: 0;
+    padding: 0;
+    font-family: 'Courier New', system-ui, sans-serif;
+    background: radial-gradient(circle at top, #1b1445 0%, var(--bg-dark) 45%, #050510 100%);
+    color: var(--text-light);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    user-select: none;
 }
 
+/* --- Space Background --- */
+#space-background {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.particle {
+    position: absolute;
+    top: -20vh;
+    opacity: 0;
+    pointer-events: none;
+    animation: streak linear infinite;
+}
+
+.star {
+    width: 2px;
+    border-radius: 999px;
+    background: linear-gradient(to bottom, transparent, var(--accent), white, transparent);
+    box-shadow: 0 0 6px var(--accent), 0 0 12px var(--primary);
+}
+
+.letter {
+    color: var(--accent);
+    font-weight: bold;
+    text-shadow: 0 0 10px var(--accent);
+}
+
+@keyframes streak {
+    0% { transform: translate(20vw, -20vh) rotate(20deg); opacity: 0; }
+    10% { opacity: 1; }
+    100% { transform: translate(-120vw, 120vh) rotate(20deg); opacity: 0; }
+}
+
+/* --- Main Editor Layout --- */
 #editor-container {
-display: flex;
-flex-direction: column;
-height: 100%;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    z-index: 1;
+    position: relative;
+    padding: 15px;
+    box-sizing: border-box;
+    gap: 15px;
 }
 
 #top-panels {
-display: flex;
-flex: 1;
-height: 60%;
+    display: flex;
+    flex: 1;
+    height: 60%;
+    gap: 15px;
+}
+
+/* --- Glassmorphism Panels --- */
+.glass-panel {
+    background: var(--card-bg);
+    border-radius: 18px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 40px rgba(0,0,0,0.4), 0 0 20px rgba(108, 92, 231, 0.15);
 }
 
 #assets-panel {
-width: 280px;
-background-color: var(--panel-color);
-padding: 15px;
-border-right: 2px solid #111;
-display: flex;
-flex-direction: column;
-gap: 10px;
-overflow-y: auto;
+    width: 300px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    overflow-y: auto;
 }
 
+#assets-panel h3, #timeline-panel h3 {
+    margin-top: 0;
+    color: var(--accent);
+    text-shadow: 0 0 8px var(--primary);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* --- UI Controls --- */
 .btn-touch {
-background-color: var(--accent-color);
-color: white;
-border: none;
-padding: 12px;
-border-radius: 8px;
-font-size: 15px;
-font-weight: bold;
-min-height: 48px;
-cursor: pointer;
-width: 100%;
-display: flex;
-align-items: center;
-justify-content: center;
+    background-color: transparent;
+    color: white;
+    border: 1px solid var(--accent);
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
-.file-input-label {
-background-color: #3b82f6;
-text-align: center;
+.btn-touch:hover {
+    background-color: var(--primary);
+    box-shadow: 0 0 15px var(--accent);
+    transform: translateY(-2px);
 }
 
+.file-input-label { background-color: rgba(59, 130, 246, 0.2); border-color: #3b82f6; }
+.file-input-label.audio { background-color: rgba(245, 158, 11, 0.2); border-color: #f59e0b; }
+
+.slider-container {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 5px;
+}
+
+.slider-container label { font-size: 11px; color: #ccc; }
+input[type="range"] { accent-color: var(--accent); width: 100%; }
+
+/* --- Preview Panel --- */
 #preview-panel {
-flex: 1;
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: center;
-background-color: #09090b;
-padding: 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
 }
 
 #video-preview {
-background-color: #000;
-max-width: 100%;
-max-height: 75%;
-aspect-ratio: 16 / 9;
-border-radius: 8px;
-box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+    background-color: #000;
+    max-width: 100%;
+    max-height: 75%;
+    aspect-ratio: 16 / 9;
+    border-radius: 8px;
+    box-shadow: 0 0 30px rgba(108, 92, 231, 0.4);
+    border: 1px solid rgba(255,255,255,0.1);
 }
 
 #controls {
-margin-top: 15px;
-display: flex;
-gap: 15px;
-align-items: center;
+    margin-top: 20px;
+    display: flex;
+    gap: 15px;
+    align-items: center;
 }
 
 #time-display {
-font-family: monospace;
-font-size: 18px;
-background: #2a2a32;
-padding: 5px 10px;
-border-radius: 4px;
+    font-family: monospace;
+    font-size: 20px;
+    background: rgba(0,0,0,0.5);
+    padding: 8px 15px;
+    border-radius: 6px;
+    border: 1px solid var(--primary);
+    color: var(--accent);
+    text-shadow: 0 0 5px var(--accent);
 }
 
-/* Timeline */
+.btn-record {
+    background-color: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* --- Timeline Panel --- */
 #timeline-panel {
-height: 40%;
-background-color: var(--panel-color);
-border-top: 3px solid #111;
-padding: 15px;
-box-sizing: border-box;
-overflow-y: auto;
+    height: 35%;
+    padding: 15px;
+    box-sizing: border-box;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .timeline-track {
-height: 55px;
-background-color: #15151a;
-margin-bottom: 10px;
-border-radius: 8px;
-position: relative;
-display: flex;
-align-items: center;
-border: 1px solid #333;
+    height: 45px;
+    background-color: rgba(0,0,0,0.3);
+    margin-bottom: 10px;
+    border-radius: 8px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    border: 1px solid rgba(255,255,255,0.05);
 }
 
 .track-label {
-font-size: 11px;
-font-weight: bold;
-text-transform: uppercase;
-background: #2a2a32;
-padding: 4px 8px;
-border-radius: 4px;
-margin-left: 10px;
-z-index: 5;
-pointer-events: none;
+    font-size: 11px;
+    font-weight: bold;
+    background: rgba(0,0,0,0.8);
+    padding: 4px 8px;
+    border-radius: 4px;
+    margin-left: 10px;
+    z-index: 5;
+    pointer-events: none;
+    border: 1px solid var(--accent);
+    color: var(--accent);
 }
 
 .clip {
-height: 80%;
-position: absolute;
-border-radius: 6px;
-display: flex;
-align-items: center;
-justify-content: center;
-font-size: 12px;
-font-weight: bold;
-padding: 0 10px;
-box-sizing: border-box;
-box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-color: white;
-overflow: hidden;
-white-space: nowrap;
-text-overflow: ellipsis;
+    height: 80%;
+    position: absolute;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    padding: 0 10px;
+    box-sizing: border-box;
+    color: white;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    cursor: grab;
+    transition: box-shadow 0.2s;
 }
 
-/* Colores por tipo de recurso */
-.clip-video { background: linear-gradient(135deg, #3b82f6, #1d4ed8); }
-.clip-image { background: linear-gradient(135deg, #10b981, #047857); }
-.clip-audio { background: linear-gradient(135deg, #f59e0b, #b45309); }
-.clip-text { background: linear-gradient(135deg, #ec4899, #be185d); }
+.clip:active { cursor: grabbing; box-shadow: 0 0 15px white; }
+
+.clip-video { background: linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(29, 78, 216, 0.8)); border: 1px solid #3b82f6;}
+.clip-image { background: linear-gradient(135deg, rgba(16, 185, 129, 0.8), rgba(4, 120, 87, 0.8)); border: 1px solid #10b981;}
+.clip-audio { background: linear-gradient(135deg, rgba(245, 158, 11, 0.8), rgba(180, 83, 9, 0.8)); border: 1px solid #f59e0b;}
+.clip-text { background: linear-gradient(135deg, rgba(236, 72, 153, 0.8), rgba(190, 24, 93, 0.8)); border: 1px solid #ec4899;}
+
+/* Loading Overlay */
+#export-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    font-size: 24px;
+    color: var(--accent);
+    backdrop-filter: blur(5px);
+}
 </style>
 </head>
 <body>
 
+<div id="space-background"></div>
+
+<div id="export-overlay">
+    <h2>RENDERING VIDEO...</h2>
+    <p>Please wait while your transmission compiles.</p>
+</div>
+
 <div id="editor-container">
-<div id="top-panels">
-<div id="assets-panel">
-<h3>Subir Recursos</h3>
+    <div id="top-panels">
+        <div id="assets-panel" class="glass-panel">
+            <h3>COMMAND CENTER</h3>
+            
+            <label tabindex="0" class="btn-touch file-input-label">
+                📁 VIDEO / PHOTO
+                <input type="file" id="file-media" accept="video/*,image/*" style="display:none;" onchange="handleFileLoad(event)">
+            </label>
+            
+            <label tabindex="0" class="btn-touch file-input-label audio">
+                🎵 AUDIO TRACK
+                <input type="file" id="file-audio" accept="audio/*" style="display:none;" onchange="handleFileLoad(event)">
+            </label>
+            
+            <button class="btn-touch" style="border-color: #ec4899; color: #ec4899;" onclick="addTextPrompt()">+ ADD HOLO-TEXT</button>
+            
+            <hr style="width: 100%; border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 5px 0;">
 
-<label class="btn-touch file-input-label">
-📁 Subir Video/Foto
-<input type="file" id="file-media" accept="video/,image/" style="display:none;" onchange="handleFileLoad(event, 'media')">
-</label>
+            <div class="slider-container">
+                <label>GLOBAL VOLUME</label>
+                <input type="range" id="vol-slider" min="0" max="1" step="0.1" value="1">
+            </div>
 
-<label class="btn-touch file-input-label" style="background-color: #f59e0b;">
-🎵 Subir Audio
-<input type="file" id="file-audio" accept="audio/*" style="display:none;" onchange="handleFileLoad(event, 'audio')">
-</label>
+            <div class="slider-container">
+                <label>IMAGE OVERLAY OPACITY</label>
+                <input type="range" id="opac-slider" min="0" max="1" step="0.1" value="1">
+            </div>
 
-<button class="btn-touch" onclick="addTextPrompt()">+ Añadir Texto</button>
+            <div style="margin-top:auto;">
+                <label style="font-size:11px; display:block; margin-bottom:5px; color:#ccc;">TRANSITION FX:</label>
+                <select id="transition-type" class="btn-touch" style="background:rgba(0,0,0,0.5); text-align:center;">
+                    <option value="none">NONE</option>
+                    <option value="fade">HYPER-FADE</option>
+                    <option value="slide">WARP-SLIDE</option>
+                </select>
+            </div>
+        </div>
 
-<div style="margin-top:auto;">
-<label style="font-size:12px; display:block; margin-bottom:5px;">Transición activa:</label>
-<select id="transition-type" class="btn-touch" style="background:#333; text-align:left;">
-<option value="none">Ninguna</option>
-<option value="fade">Difuminar (Fade)</option>
-<option value="slide">Desplazamiento (Slide)</option>
-</select>
-</div>
-</div>
+        <div id="preview-panel" class="glass-panel">
+            <canvas id="video-preview" width="1280" height="720"></canvas>
+            <div id="controls">
+                <button class="btn-touch" style="width:120px;" onclick="togglePlay()">PLAY / PAUSE</button>
+                <button class="btn-touch" style="width:100px; border-color:#9ca3af; color:#9ca3af;" onclick="stopVideo()">RESET</button>
+                <button class="btn-touch btn-record" style="width:140px;" onclick="exportVideo()">REC & EXPORT</button>
+                <div id="time-display">00:00.00</div>
+            </div>
+        </div>
+    </div>
 
-<div id="preview-panel">
-<canvas id="video-preview" width="1280" height="720"></canvas>
-<div id="controls">
-<button class="btn-touch" style="width:100px;" onclick="togglePlay()">Play/Pausa</button>
-<button class="btn-touch" style="width:90px; background:#ef4444;" onclick="stopVideo()">Reiniciar</button>
-<div id="time-display">00:00.00</div>
-</div>
-</div>
-</div>
-
-<div id="timeline-panel">
-<h3>Línea de Tiempo (Capas)</h3>
-
-<div class="timeline-track" id="track-text"><span class="track-label">Texto</span></div>
-<div class="timeline-track" id="track-audio"><span class="track-label">Audio</span></div>
-<div class="timeline-track" id="track-overlay"><span class="track-label">Fotos</span></div>
-<div class="timeline-track" id="track-video"><span class="track-label">Video Base</span></div>
-</div>
+    <div id="timeline-panel" class="glass-panel">
+        <h3>TIMELINE MATRIX</h3>
+        <div class="timeline-track" id="track-text"><span class="track-label">TEXT</span></div>
+        <div class="timeline-track" id="track-audio"><span class="track-label">AUDIO</span></div>
+        <div class="timeline-track" id="track-overlay"><span class="track-label">IMAGES</span></div>
+        <div class="timeline-track" id="track-video"><span class="track-label">VIDEO BASE</span></div>
+    </div>
 </div>
 
 <script>
+// --- Space Background Logic ---
+const particleCount = 75;
+const container = document.getElementById('space-background');
+const letters = "01101001CODECUB";
+
+function createParticle() {
+    const particle = document.createElement('div');
+    particle.classList.add('particle');
+    const isStar = Math.random() > 0.15;
+
+    if (isStar) {
+        particle.classList.add('star');
+        particle.style.height = (Math.random() * 80 + 20) + 'px';
+    } else {
+        particle.classList.add('letter');
+        particle.innerText = letters.charAt(Math.floor(Math.random() * letters.length));
+        particle.style.fontSize = (Math.random() * 1.2 + 0.8) + 'rem';
+    }
+
+    particle.style.left = (Math.random() * 220) + 'vw';
+    particle.style.animationDuration = (Math.random() * 10 + 6) + 's';
+    particle.style.animationDelay = (Math.random() * 8) + 's';
+    particle.style.opacity = Math.random() * 0.7 + 0.2;
+    container.appendChild(particle);
+}
+for (let i = 0; i < particleCount; i++) createParticle();
+
+// --- Editor Logic ---
 const canvas = document.getElementById('video-preview');
 const ctx = canvas.getContext('2d');
 const timeDisplay = document.getElementById('time-display');
 const transitionSelect = document.getElementById('transition-type');
+const volSlider = document.getElementById('vol-slider');
+const opacSlider = document.getElementById('opac-slider');
+const exportOverlay = document.getElementById('export-overlay');
 
-// Estado del Editor
 let isPlaying = false;
-let currentTime = 0; // Tiempo actual en segundos
+let isExporting = false;
+let currentTime = 0;
 let lastFrameTime = performance.now();
+const pixelsPerSecond = 40;
 
-// Almacén de capas/clips de la línea de tiempo
-let layers = {
-video: null,
-image: null,
-audio: null,
-text: null
-};
+let layers = { video: null, image: null, audio: null, text: null };
 
-// 1. Manejo y Carga de Archivos Reales del Usuario
-function handleFileLoad(event, type) {
-const file = event.target.files[0];
-if (!file) return;
+function handleFileLoad(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const fileURL = URL.createObjectURL(file);
 
-const fileURL = URL.createObjectURL(file);
-
-if (file.type.startsWith('video/')) {
-const videoEl = document.createElement('video');
-videoEl.src = fileURL;
-videoEl.muted = false; // Permitir audio del video original
-videoEl.load();
-
-layers.video = { type: 'video', element: videoEl, start: 0, end: 7, name: file.name };
-rebuildTimelineUI('track-video', layers.video, 'clip-video');
-}
-else if (file.type.startsWith('image/')) {
-const imgEl = new Image();
-imgEl.src = fileURL;
-
-layers.image = { type: 'image', element: imgEl, start: 3, end: 8, name: file.name };
-rebuildTimelineUI('track-overlay', layers.image, 'clip-image');
-}
-else if (file.type.startsWith('audio/')) {
-const audioEl = new Audio();
-audioEl.src = fileURL;
-
-layers.audio = { type: 'audio', element: audioEl, start: 0, end: 10, name: file.name };
-rebuildTimelineUI('track-audio', layers.audio, 'clip-audio');
-}
+    if (file.type.startsWith('video/')) {
+        const videoEl = document.createElement('video');
+        videoEl.src = fileURL;
+        videoEl.muted = false; 
+        videoEl.load();
+        layers.video = { type: 'video', element: videoEl, start: 0, end: 10, name: file.name, duration: 10 };
+        rebuildTimelineUI('track-video', layers.video, 'clip-video');
+    }
+    else if (file.type.startsWith('image/')) {
+        const imgEl = new Image();
+        imgEl.src = fileURL;
+        layers.image = { type: 'image', element: imgEl, start: 2, end: 8, name: file.name, duration: 6 };
+        rebuildTimelineUI('track-overlay', layers.image, 'clip-image');
+    }
+    else if (file.type.startsWith('audio/')) {
+        const audioEl = new Audio();
+        audioEl.src = fileURL;
+        layers.audio = { type: 'audio', element: audioEl, start: 0, end: 10, name: file.name, duration: 10 };
+        rebuildTimelineUI('track-audio', layers.audio, 'clip-audio');
+    }
 }
 
 function addTextPrompt() {
-const textInput = prompt("Introduce el texto para el video:");
-if (!textInput) return;
-
-layers.text = { type: 'text', content: textInput, start: 1, end: 6, name: textInput };
-rebuildTimelineUI('track-text', layers.text, 'clip-text');
+    const textInput = prompt("Enter holographic text protocol:");
+    if (!textInput) return;
+    layers.text = { type: 'text', content: textInput, start: 1, end: 6, name: textInput, duration: 5 };
+    rebuildTimelineUI('track-text', layers.text, 'clip-text');
 }
 
-// Dibuja visualmente los bloques en la línea de tiempo
 function rebuildTimelineUI(trackId, data, cssClass) {
-const track = document.getElementById(trackId);
-// Limpiar clips viejos conservando el label
-const label = track.querySelector('.track-label');
-track.innerHTML = '';
-track.appendChild(label);
+    const track = document.getElementById(trackId);
+    const label = track.querySelector('.track-label');
+    track.innerHTML = '';
+    track.appendChild(label);
+    if (!data) return;
 
-if (!data) return;
+    const clipEl = document.createElement('div');
+    clipEl.className = `clip ${cssClass}`;
+    clipEl.style.left = `${100 + (data.start * pixelsPerSecond)}px`;
+    clipEl.style.width = `${data.duration * pixelsPerSecond}px`;
+    clipEl.innerText = data.name;
 
-const clipEl = document.createElement('div');
-clipEl.className = clip ${cssClass}; // Mapeo simple: 1 segundo = 40 píxeles de ancho clipEl.style.left = ``${100 + (data.start * 40)}px;
-clipEl.style.width = ${(data.end - data.start) * 40}px`;
-clipEl.innerText = data.name;
+    // Interactive Dragging Logic
+    clipEl.onmousedown = (e) => {
+        if(isPlaying) return; // Prevent drag while playing
+        let startX = e.clientX;
+        let initialStart = data.start;
 
-track.appendChild(clipEl);
+        document.onmousemove = (eMove) => {
+            const deltaX = eMove.clientX - startX;
+            const deltaSeconds = deltaX / pixelsPerSecond;
+            data.start = Math.max(0, initialStart + deltaSeconds);
+            data.end = data.start + data.duration;
+            clipEl.style.left = `${100 + (data.start * pixelsPerSecond)}px`;
+            
+            // Scrub preview while dragging
+            currentTime = data.start;
+            renderCanvas();
+        };
+
+        document.onmouseup = () => {
+            document.onmousemove = null;
+            document.onmouseup = null;
+        };
+    };
+
+    track.appendChild(clipEl);
 }
 
-// 2. Motor de Renderizado en Canvas y Lógica de Transiciones
 function updateAndRender() {
-if (!isPlaying) return;
+    if (!isPlaying) return;
 
-// Calcular el tiempo transcurrido real
-const now = performance.now();
-const deltaTime = (now - lastFrameTime) / 1000;
-lastFrameTime = now;
-currentTime += deltaTime;
+    const now = performance.now();
+    const deltaTime = (now - lastFrameTime) / 1000;
+    lastFrameTime = now;
+    currentTime += deltaTime;
 
-// Mostrar tiempo con formato MM:SS.CC
-const minutes = Math.floor(currentTime / 60).toString().padStart(2, '0');
-const seconds = Math.floor(currentTime % 60).toString().padStart(2, '0');
-const cents = Math.floor((currentTime % 1) * 100).toString().padStart(2, '0');
-timeDisplay.innerText = ``${minutes}:{cents}`;
+    renderCanvas();
 
-// Limpiar lienzo
-ctx.fillStyle = "#000000";
-ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-// --- CAPA 1: VIDEO BASE ---
-if (layers.video && currentTime >= layers.video.start && currentTime <= layers.video.end) {
-if (layers.video.element.paused) layers.video.element.play();
-
-// Aplicar efectos de transición seleccionados
-applyTransitions(layers.video);
-
-ctx.drawImage(layers.video.element, 0, 0, canvas.width, canvas.height);
-ctx.globalAlpha = 1.0; // Resetear opacidad tras pintar
-} else if (layers.video && !layers.video.element.paused) {
-layers.video.element.pause();
+    if(isPlaying) requestAnimationFrame(updateAndRender);
 }
 
-// --- CAPA 2: IMAGEN SUPERPUESTA ---
-if (layers.image && currentTime >= layers.image.start && currentTime <= layers.image.end) {
-applyTransitions(layers.image);
-// Centrar la imagen sobre el video
-ctx.drawImage(layers.image.element, 340, 160, 600, 400);
-ctx.globalAlpha = 1.0;
+function renderCanvas() {
+    // Timer formatting
+    const minutes = Math.floor(currentTime / 60).toString().padStart(2, '0');
+    const seconds = Math.floor(currentTime % 60).toString().padStart(2, '0');
+    const cents = Math.floor((currentTime % 1) * 100).toString().padStart(2, '0');
+    timeDisplay.innerText = `${minutes}:${seconds}.${cents}`;
+
+    // Clear canvas
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    const globalVol = parseFloat(volSlider.value);
+    const globalOpac = parseFloat(opacSlider.value);
+
+    // --- VIDEO LAYER ---
+    if (layers.video && currentTime >= layers.video.start && currentTime <= layers.video.end) {
+        if (isPlaying && layers.video.element.paused) layers.video.element.play();
+        layers.video.element.volume = globalVol;
+        
+        ctx.save();
+        applyTransitions(layers.video);
+        ctx.drawImage(layers.video.element, 0, 0, canvas.width, canvas.height);
+        ctx.restore();
+    } else if (layers.video && !layers.video.element.paused) {
+        layers.video.element.pause();
+    }
+
+    // --- IMAGE LAYER ---
+    if (layers.image && currentTime >= layers.image.start && currentTime <= layers.image.end) {
+        ctx.save();
+        applyTransitions(layers.image);
+        ctx.globalAlpha = ctx.globalAlpha * globalOpac; // Apply opacity slider
+        ctx.drawImage(layers.image.element, 340, 160, 600, 400);
+        ctx.restore();
+    }
+
+    // --- AUDIO LAYER ---
+    if (layers.audio) {
+        if (currentTime >= layers.audio.start && currentTime <= layers.audio.end) {
+            if (isPlaying && layers.audio.element.paused) layers.audio.element.play();
+            layers.audio.element.volume = globalVol;
+        } else if (!layers.audio.element.paused) {
+            layers.audio.element.pause();
+        }
+    }
+
+    // --- TEXT LAYER ---
+    if (layers.text && currentTime >= layers.text.start && currentTime <= layers.text.end) {
+        ctx.save();
+        applyTransitions(layers.text);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 70px 'Courier New', monospace";
+        ctx.shadowColor = "#a29bfe";
+        ctx.shadowBlur = 15;
+        ctx.textAlign = "center";
+        ctx.fillText(layers.text.content, canvas.width / 2, 600);
+        ctx.restore();
+    }
 }
 
-// --- CAPA 3: AUDIO EN MEMORIA ---
-if (layers.audio) {
-if (currentTime >= layers.audio.start && currentTime <= layers.audio.end) {
-if (layers.audio.element.paused) layers.audio.element.play();
-} else {
-layers.audio.element.pause();
-}
-}
-
-// --- CAPA 4: TEXTO ---
-if (layers.text && currentTime >= layers.text.start && currentTime <= layers.text.end) {
-ctx.fillStyle = "#ffffff";
-ctx.font = "bold 60px sans-serif";
-ctx.shadowColor = "rgba(0,0,0,0.5)";
-ctx.shadowBlur = 10;
-ctx.textAlign = "center";
-ctx.fillText(layers.text.content, canvas.width / 2, 600);
-ctx.shadowBlur = 0; // Resetear sombra
-}
-
-requestAnimationFrame(updateAndRender);
-}
-
-// Aplica transformaciones matemáticas basadas en la entrada/salida de un elemento
 function applyTransitions(layer) {
-const transType = transitionSelect.value;
-if (transType === 'none') return;
+    const transType = transitionSelect.value;
+    if (transType === 'none') return;
 
-const durationIn = 0.8; // Duración del efecto de entrada en segundos
-const timeActive = currentTime - layer.start;
+    const durationIn = 0.8;
+    const timeActive = currentTime - layer.start;
 
-if (timeActive < durationIn) {
-const progress = timeActive / durationIn; // Va de 0 a 1
-
-if (transType === 'fade') {
-ctx.globalAlpha = progress; // Efecto Difuminar
-}
-else if (transType === 'slide') {
-// Efecto Desplazamiento desde la izquierda
-const offsetX = (1 - progress) * -canvas.width;
-ctx.translate(offsetX, 0);
-// Nota: si usas translate, debes limpiar el contexto al final de la capa,
-// para este prototipo simplificado altera directamente el flujo de dibujo.
-}
-}
+    if (timeActive < durationIn) {
+        const progress = timeActive / durationIn;
+        if (transType === 'fade') {
+            ctx.globalAlpha = progress;
+        }
+        else if (transType === 'slide') {
+            const offsetX = (1 - progress) * -canvas.width;
+            ctx.translate(offsetX, 0);
+        }
+    }
 }
 
-// 3. Controles de Reproducción táctiles
 function togglePlay() {
-isPlaying = !isPlaying;
-if (isPlaying) {
-lastFrameTime = performance.now();
-updateAndRender();
-} else {
-if (layers.video) layers.video.element.pause();
-if (layers.audio) layers.audio.element.pause();
-}
+    isPlaying = !isPlaying;
+    if (isPlaying) {
+        lastFrameTime = performance.now();
+        updateAndRender();
+    } else {
+        if (layers.video) layers.video.element.pause();
+        if (layers.audio) layers.audio.element.pause();
+    }
 }
 
 function stopVideo() {
-isPlaying = false;
-currentTime = 0;
-timeDisplay.innerText = "00:00.00";
-
-if (layers.video) { layers.video.element.pause(); layers.video.element.currentTime = 0; }
-if (layers.audio) { layers.audio.element.pause(); layers.audio.element.currentTime = 0; }
-
-// Renderizar un fotograma limpio
-ctx.fillStyle = "#000";
-ctx.fillRect(0, 0, canvas.width, canvas.height);
+    isPlaying = false;
+    currentTime = 0;
+    timeDisplay.innerText = "00:00.00";
+    if (layers.video) { layers.video.element.pause(); layers.video.element.currentTime = 0; }
+    if (layers.audio) { layers.audio.element.pause(); layers.audio.element.currentTime = 0; }
+    renderCanvas();
 }
+
+// --- EXPORT FUNCTIONALITY (MediaRecorder API) ---
+let mediaRecorder;
+let recordedChunks = [];
+
+function exportVideo() {
+    if(isExporting) return;
+    isExporting = true;
+    exportOverlay.style.display = 'flex';
+    
+    // Find max end time to know when to stop recording
+    let maxTime = 0;
+    for(let key in layers) {
+        if(layers[key] && layers[key].end > maxTime) maxTime = layers[key].end;
+    }
+    
+    if(maxTime === 0) {
+        alert("Add some media to the timeline before exporting!");
+        isExporting = false;
+        exportOverlay.style.display = 'none';
+        return;
+    }
+
+    stopVideo(); // Reset to 0
+
+    // Capture Canvas Stream at 30 FPS
+    const stream = canvas.captureStream(30); 
+    
+    // We also need to capture audio if present.
+    // Complex Web Audio API setup is required to merge element audio to stream,
+    // so for this prototype, we record the canvas visual stream as WebM.
+    
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+    mediaRecorder.ondataavailable = e => {
+        if (e.data.size > 0) recordedChunks.push(e.data);
+    };
+    
+    mediaRecorder.onstop = () => {
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'codecub-cosmic-edit.webm';
+        a.click();
+        URL.revokeObjectURL(url);
+        recordedChunks = [];
+        isExporting = false;
+        exportOverlay.style.display = 'none';
+        stopVideo();
+    };
+
+    mediaRecorder.start();
+    togglePlay(); // Start playback
+
+    // Automatically stop when timeline finishes
+    setTimeout(() => {
+        if(mediaRecorder.state === "recording") {
+            mediaRecorder.stop();
+        }
+    }, (maxTime * 1000) + 500); // add 500ms buffer
+}
+
+// Initial draw
+renderCanvas();
 </script>
 </body>
 </html>
